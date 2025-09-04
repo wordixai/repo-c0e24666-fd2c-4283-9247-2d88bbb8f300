@@ -7,7 +7,6 @@ interface ScreenshotOptions {
   image_quality?: number;
   block_ads?: boolean;
   block_cookie_banners?: boolean;
-  block_banners?: boolean;
   block_trackers?: boolean;
   delay?: number;
   timeout?: number;
@@ -37,20 +36,27 @@ export class ScreenshotOneAPI {
     params.append('viewport_height', (options.viewport_height || 1080).toString());
     params.append('device_scale_factor', (options.device_scale_factor || 2).toString());
     params.append('format', options.format || 'png');
-    params.append('image_quality', (options.image_quality || 100).toString());
     
-    // Privacy and performance options
-    if (options.block_ads !== false) params.append('block_ads', 'true');
-    if (options.block_cookie_banners !== false) params.append('block_cookie_banners', 'true');
-    if (options.block_banners !== false) params.append('block_banners', 'true');
-    if (options.block_trackers !== false) params.append('block_trackers', 'true');
+    // Image quality (only for JPG and WebP)
+    if (options.format === 'jpg' || options.format === 'webp') {
+      params.append('image_quality', (options.image_quality || 100).toString());
+    }
+    
+    // Privacy and performance options (only supported ones)
+    if (options.block_ads) params.append('block_ads', 'true');
+    if (options.block_cookie_banners) params.append('block_cookie_banners', 'true');
+    if (options.block_trackers) params.append('block_trackers', 'true');
     
     // Timing options
-    params.append('delay', (options.delay || 0).toString());
-    params.append('timeout', (options.timeout || 60).toString());
+    if (options.delay && options.delay > 0) {
+      params.append('delay', options.delay.toString());
+    }
+    if (options.timeout && options.timeout !== 60) {
+      params.append('timeout', options.timeout.toString());
+    }
     
     // Page options
-    if (options.full_page !== false) params.append('full_page', 'true');
+    if (options.full_page) params.append('full_page', 'true');
     if (options.omit_background) params.append('omit_background', 'true');
     if (options.dark_mode) params.append('dark_mode', 'true');
     if (options.reduce_motion) params.append('reduce_motion', 'true');
@@ -61,10 +67,13 @@ export class ScreenshotOneAPI {
   async takeScreenshot(options: ScreenshotOptions): Promise<Blob> {
     const screenshotUrl = this.generateScreenshotUrl(options);
     
+    console.log('Screenshot URL:', screenshotUrl); // Debug log
+    
     const response = await fetch(screenshotUrl);
     
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('Screenshot API Error:', errorText); // Debug log
       throw new Error(`Screenshot failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
     

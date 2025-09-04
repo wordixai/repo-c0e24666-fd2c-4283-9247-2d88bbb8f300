@@ -17,6 +17,7 @@ export interface ScreenshotConfig {
   full_page: boolean;
   block_ads: boolean;
   block_cookie_banners: boolean;
+  block_trackers: boolean;
   delay: number;
   dark_mode: boolean;
   omit_background: boolean;
@@ -167,20 +168,22 @@ export const ScreenshotSettings = ({ config, onChange, isOpen, onToggle }: Scree
               </Select>
             </div>
 
-            {/* Image Quality */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Image Quality: {config.image_quality}%
-              </Label>
-              <Slider
-                value={[config.image_quality]}
-                onValueChange={(value) => updateConfig({ image_quality: value[0] })}
-                max={100}
-                min={10}
-                step={10}
-                className="w-full"
-              />
-            </div>
+            {/* Image Quality - only show for JPG and WebP */}
+            {(config.format === 'jpg' || config.format === 'webp') && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  Image Quality: {config.image_quality}%
+                </Label>
+                <Slider
+                  value={[config.image_quality]}
+                  onValueChange={(value) => updateConfig({ image_quality: value[0] })}
+                  max={100}
+                  min={10}
+                  step={10}
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
 
           {/* Capture Options */}
@@ -249,6 +252,17 @@ export const ScreenshotSettings = ({ config, onChange, isOpen, onToggle }: Scree
                   <Switch
                     checked={config.block_cookie_banners}
                     onCheckedChange={(checked) => updateConfig({ block_cookie_banners: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm">Block Trackers</Label>
+                    <p className="text-xs text-muted-foreground">Remove tracking scripts</p>
+                  </div>
+                  <Switch
+                    checked={config.block_trackers}
+                    onCheckedChange={(checked) => updateConfig({ block_trackers: checked })}
                   />
                 </div>
               </div>

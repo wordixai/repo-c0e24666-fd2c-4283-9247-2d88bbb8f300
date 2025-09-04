@@ -27,6 +27,7 @@ const Index = () => {
     full_page: true,
     block_ads: true,
     block_cookie_banners: true,
+    block_trackers: true,
     delay: 2,
     dark_mode: false,
     omit_background: false,
