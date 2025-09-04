@@ -1,166 +1,95 @@
 import { useState, useRef } from 'react';
-import { Camera, Download, Globe, Zap, Shield, Smartphone } from 'lucide-react';
+import { Camera, Download, Globe, Zap, Shield, Smartphone, ExternalLink, Copy, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { screenshotOne } from '@/lib/screenshotone';
+import { ScreenshotSettings, ScreenshotConfig } from '@/components/ScreenshotSettings';
 
 const Index = () => {
   const [url, setUrl] = useState('');
   const [isCapturing, setIsCapturing] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState('');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [capturedUrl, setCapturedUrl] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
   const { toast } = useToast();
 
-  const captureScreenshot = async () => {
-    if (!url) {
-      toast({
-        title: "URL Required",
-        description: "Please enter a valid URL to capture",
-        variant: "destructive"
-      });
-      return;
+  const [config, setConfig] = useState<ScreenshotConfig>({
+    viewport_width: 1920,
+    viewport_height: 1080,
+    device_scale_factor: 2,
+    format: 'png',
+    image_quality: 100,
+    full_page: true,
+    block_ads: true,
+    block_cookie_banners: true,
+    delay: 2,
+    dark_mode: false,
+    omit_background: false,
+  });
+
+  const validateUrl = (inputUrl: string): string => {
+    if (!inputUrl) {
+      throw new Error('Please enter a website URL');
     }
 
-    // Validate URL format
-    const urlPattern = /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\/\w\-._~:?#[\]@!$&'()*+,;=%]*)?$/;
-    let validUrl = url;
+    let validUrl = inputUrl.trim();
     
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      validUrl = 'https://' + url;
+    // Add protocol if missing
+    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+      validUrl = 'https://' + validUrl;
     }
 
-    if (!urlPattern.test(validUrl.replace(/^https?:\/\//, ''))) {
-      toast({
-        title: "Invalid URL",
-        description: "Please enter a valid website URL",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsCapturing(true);
-    
+    // Basic URL validation
     try {
-      // Create a new window/iframe to load the URL
-      const iframe = document.createElement('iframe');
-      iframe.style.width = '1920px';
-      iframe.style.height = '1080px';
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      iframe.style.border = 'none';
-      
-      document.body.appendChild(iframe);
-      
-      // Load the URL
-      iframe.src = validUrl;
-      
-      iframe.onload = async () => {
-        try {
-          // Wait a bit for content to load
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Use html2canvas-like approach with canvas
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return;
-          
-          canvas.width = 1920;
-          canvas.height = 1080;
-          
-          // Create a simple screenshot simulation
-          // In a real app, you'd use a service like Puppeteer or a screenshot API
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          // Add a header area
-          ctx.fillStyle = '#f8f9fa';
-          ctx.fillRect(0, 0, canvas.width, 80);
-          
-          // Add URL bar
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(100, 20, canvas.width - 200, 40);
-          ctx.strokeStyle = '#e0e0e0';
-          ctx.strokeRect(100, 20, canvas.width - 200, 40);
-          
-          // Add URL text
-          ctx.fillStyle = '#333333';
-          ctx.font = '16px Arial';
-          ctx.fillText(validUrl, 120, 45);
-          
-          // Add content area
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 80, canvas.width, canvas.height - 80);
-          
-          // Add some simulated content
-          ctx.fillStyle = '#333333';
-          ctx.font = 'bold 32px Arial';
-          ctx.fillText('Website Screenshot', 100, 150);
-          
-          ctx.font = '18px Arial';
-          ctx.fillStyle = '#666666';
-          ctx.fillText('This is a simulated screenshot of: ' + validUrl, 100, 200);
-          ctx.fillText('In a production app, this would show the actual webpage content.', 100, 230);
-          
-          // Add some visual elements
-          ctx.fillStyle = '#007bff';
-          ctx.fillRect(100, 280, 200, 100);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '16px Arial';
-          ctx.fillText('Sample Content', 130, 335);
-          
-          ctx.fillStyle = '#28a745';
-          ctx.fillRect(350, 280, 200, 100);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillText('More Content', 385, 335);
-          
-          // Convert canvas to blob and create download URL
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              setScreenshotUrl(url);
-              
-              toast({
-                title: "Screenshot Captured!",
-                description: "Your webpage screenshot is ready for download.",
-              });
-            }
-          }, 'image/png', 1.0);
-          
-        } catch (error) {
-          console.error('Screenshot error:', error);
-          toast({
-            title: "Capture Failed",
-            description: "Unable to capture screenshot. This is a demo version.",
-            variant: "destructive"
-          });
-        } finally {
-          document.body.removeChild(iframe);
-          setIsCapturing(false);
-        }
-      };
-      
-      iframe.onerror = () => {
-        document.body.removeChild(iframe);
-        setIsCapturing(false);
-        toast({
-          title: "Load Failed",
-          description: "Unable to load the webpage. Please check the URL.",
-          variant: "destructive"
-        });
-      };
-      
-    } catch (error) {
-      setIsCapturing(false);
+      new URL(validUrl);
+      return validUrl;
+    } catch {
+      throw new Error('Please enter a valid website URL');
+    }
+  };
+
+  const captureScreenshot = async () => {
+    try {
+      const validUrl = validateUrl(url);
+      setIsCapturing(true);
+      setCapturedUrl(validUrl);
+
       toast({
-        title: "Error",
-        description: "An error occurred while capturing the screenshot.",
+        title: "Capturing Screenshot",
+        description: "Please wait while we capture the webpage...",
+      });
+
+      // Generate screenshot using ScreenshotOne API
+      const screenshotBlob = await screenshotOne.takeScreenshot({
+        url: validUrl,
+        ...config,
+      });
+
+      // Create object URL for the blob
+      const objectUrl = URL.createObjectURL(screenshotBlob);
+      setScreenshotUrl(objectUrl);
+
+      toast({
+        title: "Screenshot Captured!",
+        description: "Your high-quality screenshot is ready for download.",
+      });
+
+    } catch (error) {
+      console.error('Screenshot error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to capture screenshot';
+      
+      toast({
+        title: "Capture Failed",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -169,45 +98,102 @@ const Index = () => {
     
     const link = document.createElement('a');
     link.href = screenshotUrl;
-    link.download = `screenshot-${new Date().getTime()}.png`;
+    
+    // Generate filename based on URL and timestamp
+    const domain = capturedUrl ? new URL(capturedUrl).hostname : 'screenshot';
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+    link.download = `${domain}-${timestamp}.${config.format}`;
+    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
     toast({
       title: "Download Started",
-      description: "Your screenshot is being downloaded.",
+      description: `Your ${config.format.toUpperCase()} screenshot is being downloaded.`,
     });
+  };
+
+  const copyImageToClipboard = async () => {
+    if (!screenshotUrl) return;
+    
+    try {
+      const response = await fetch(screenshotUrl);
+      const blob = await response.blob();
+      
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob
+        })
+      ]);
+      
+      toast({
+        title: "Copied to Clipboard",
+        description: "Screenshot has been copied to your clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy to clipboard. Please download instead.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const shareScreenshot = async () => {
+    if (!screenshotUrl || !navigator.share) {
+      toast({
+        title: "Share Not Available",
+        description: "Web Share API is not supported in this browser.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(screenshotUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `screenshot.${config.format}`, { type: blob.type });
+
+      await navigator.share({
+        title: 'Website Screenshot',
+        text: `Screenshot of ${capturedUrl}`,
+        files: [file]
+      });
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   };
 
   const features = [
     {
       icon: Camera,
-      title: "High-Quality Capture",
-      description: "Capture websites in full HD resolution with perfect clarity"
+      title: "Ultra High Quality",
+      description: "Capture in up to 4K resolution with perfect pixel accuracy"
     },
     {
       icon: Zap,
       title: "Lightning Fast",
-      description: "Get your screenshots in seconds, not minutes"
+      description: "Powered by ScreenshotOne API for instant results"
     },
     {
       icon: Shield,
-      title: "Privacy First",
-      description: "No data stored, everything happens in your browser"
+      title: "Privacy Protected",
+      description: "Block ads, trackers, and cookie banners automatically"
     },
     {
       icon: Smartphone,
-      title: "Any Device",
-      description: "Works perfectly on desktop, tablet, and mobile"
+      title: "Any Device Size",
+      description: "Desktop, tablet, mobile - capture any viewport size"
     }
   ];
 
   const examples = [
-    { url: "google.com", title: "Google Homepage" },
+    { url: "google.com", title: "Google" },
     { url: "github.com", title: "GitHub" },
-    { url: "stackoverflow.com", title: "Stack Overflow" },
-    { url: "vercel.com", title: "Vercel" }
+    { url: "vercel.com", title: "Vercel" },
+    { url: "tailwindcss.com", title: "Tailwind CSS" },
+    { url: "openai.com", title: "OpenAI" }
   ];
 
   return (
@@ -216,30 +202,32 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center max-w-4xl mx-auto mb-16">
           <Badge className="mb-4 gradient-primary text-primary-foreground border-0">
-            ✨ New & Improved
+            ⚡ Powered by ScreenshotOne
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent mb-6">
-            Capture Any Webpage
+            Professional Website
             <br />
-            <span className="gradient-primary bg-clip-text text-transparent">Instantly</span>
+            <span className="gradient-primary bg-clip-text text-transparent">Screenshots</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Take high-quality screenshots of any webpage in seconds. No registration required, 
-            completely free, and works right in your browser.
+            Capture pixel-perfect, high-resolution screenshots of any webpage. 
+            Advanced settings, privacy protection, and instant download.
           </p>
           
           {/* URL Input Section */}
           <Card className="capture-card max-w-2xl mx-auto mb-8">
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
+                <div className="flex-1 relative">
+                  <Globe className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="url"
                     placeholder="Enter website URL (e.g., google.com)"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    className="text-lg h-12"
+                    className="text-lg h-12 pl-10"
                     disabled={isCapturing}
+                    onKeyPress={(e) => e.key === 'Enter' && !isCapturing && captureScreenshot()}
                   />
                 </div>
                 <Button
@@ -263,9 +251,17 @@ const Index = () => {
             </CardContent>
           </Card>
 
+          {/* Advanced Settings */}
+          <ScreenshotSettings
+            config={config}
+            onChange={setConfig}
+            isOpen={showSettings}
+            onToggle={() => setShowSettings(!showSettings)}
+          />
+
           {/* Quick Examples */}
           <div className="flex flex-wrap justify-center gap-2 mb-8">
-            <span className="text-sm text-muted-foreground mr-2">Try:</span>
+            <span className="text-sm text-muted-foreground mr-2">Quick try:</span>
             {examples.map((example) => (
               <Button
                 key={example.url}
@@ -273,6 +269,7 @@ const Index = () => {
                 size="sm"
                 onClick={() => setUrl(example.url)}
                 className="text-xs"
+                disabled={isCapturing}
               >
                 {example.title}
               </Button>
@@ -282,26 +279,61 @@ const Index = () => {
 
         {/* Screenshot Result */}
         {screenshotUrl && (
-          <Card className="capture-card max-w-4xl mx-auto mb-16">
+          <Card className="capture-card max-w-5xl mx-auto mb-16">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Screenshot Ready!</span>
-                <Button onClick={downloadScreenshot} className="hero-button">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PNG
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Your high-quality screenshot has been generated successfully.
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <span>Screenshot Ready!</span>
+                    <Badge variant="secondary" className="ml-2">
+                      {config.viewport_width}×{config.viewport_height}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="flex items-center mt-1">
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    {capturedUrl}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {navigator.clipboard && (
+                    <Button variant="outline" onClick={copyImageToClipboard}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                  )}
+                  {navigator.share && (
+                    <Button variant="outline" onClick={shareScreenshot}>
+                      <Share className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                  )}
+                  <Button onClick={downloadScreenshot} className="hero-button">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download {config.format.toUpperCase()}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg overflow-hidden shadow-soft">
+              <div className="border rounded-lg overflow-hidden shadow-soft bg-checkered">
                 <img
                   src={screenshotUrl}
                   alt="Website Screenshot"
-                  className="w-full h-auto"
+                  className="w-full h-auto max-h-[70vh] object-contain"
                 />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4 text-sm text-muted-foreground">
+                <span>Format: {config.format.toUpperCase()}</span>
+                <span>•</span>
+                <span>Quality: {config.image_quality}%</span>
+                <span>•</span>
+                <span>Size: {config.viewport_width}×{config.viewport_height}</span>
+                {config.full_page && (
+                  <>
+                    <span>•</span>
+                    <span>Full Page</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -323,50 +355,87 @@ const Index = () => {
         </div>
 
         {/* How It Works */}
-        <Card className="capture-card max-w-4xl mx-auto">
+        <Card className="capture-card max-w-4xl mx-auto mb-16">
           <CardHeader>
             <CardTitle className="text-center">How It Works</CardTitle>
             <CardDescription className="text-center">
-              Simple, fast, and secure screenshot capture in 3 easy steps
+              Professional screenshot capture powered by ScreenshotOne API
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                   1
                 </div>
                 <h4 className="font-semibold mb-2">Enter URL</h4>
                 <p className="text-sm text-muted-foreground">
-                  Paste the website URL you want to capture
+                  Paste any website URL you want to capture
                 </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                   2
                 </div>
-                <h4 className="font-semibold mb-2">Capture</h4>
+                <h4 className="font-semibold mb-2">Configure</h4>
                 <p className="text-sm text-muted-foreground">
-                  Click capture and wait a few seconds for processing
+                  Adjust settings for quality, size, and privacy
                 </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                   3
                 </div>
+                <h4 className="font-semibold mb-2">Capture</h4>
+                <p className="text-sm text-muted-foreground">
+                  Our API captures the perfect screenshot
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 font-bold text-lg">
+                  4
+                </div>
                 <h4 className="font-semibold mb-2">Download</h4>
                 <p className="text-sm text-muted-foreground">
-                  Download your high-quality PNG screenshot
+                  Download, copy, or share your screenshot
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Technical Details */}
+        <Card className="capture-card max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>Why Choose Our Screenshot Tool?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold mb-3">Advanced Features</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Up to 4K resolution screenshots</li>
+                  <li>• Full page or viewport capture</li>
+                  <li>• Multiple format support (PNG, JPG, WebP)</li>
+                  <li>• Device simulation (Desktop, Mobile, Tablet)</li>
+                  <li>• Dark mode and background removal</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">Privacy & Performance</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Automatic ad and tracker blocking</li>
+                  <li>• Cookie banner removal</li>
+                  <li>• Fast API-powered capture</li>
+                  <li>• No data storage or logging</li>
+                  <li>• GDPR compliant processing</li>
+                </ul>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Hidden Canvas for Screenshot Generation */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-      
       <Toaster />
     </div>
   );
