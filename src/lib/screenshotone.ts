@@ -64,7 +64,8 @@ export class ScreenshotOneAPI {
     const response = await fetch(screenshotUrl);
     
     if (!response.ok) {
-      throw new Error(`Screenshot failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Screenshot failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     return await response.blob();
@@ -81,5 +82,5 @@ export class ScreenshotOneAPI {
   }
 }
 
-// Demo access key - replace with your actual ScreenshotOne access key
-export const screenshotOne = new ScreenshotOneAPI('YWNjZXNzX2tleQ');
+// Your ScreenshotOne access key
+export const screenshotOne = new ScreenshotOneAPI('CvXm3GyKOMTjfA');
