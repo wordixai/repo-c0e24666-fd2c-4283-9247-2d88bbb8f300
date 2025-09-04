@@ -8,20 +8,84 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-   
+    /* Color Palette */
+    --primary: 215 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 222 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 215 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 215 100% 60%;
+    --background: 0 0% 100%;
+    --foreground: 222 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 4.9%;
+    --radius: 0.5rem;
+
+    /* Design System Colors */
+    --gradient-primary: linear-gradient(135deg, hsl(215 100% 60%) 0%, hsl(230 100% 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 98%) 0%, hsl(220 40% 95%) 100%);
+    --shadow-soft: 0 4px 20px -2px hsla(215, 50%, 30%, 0.08);
+    --shadow-strong: 0 8px 40px -4px hsla(215, 50%, 30%, 0.15);
   }
 
   .dark {
-
+    --primary: 215 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 215 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 215 100% 60%;
+    --background: 222 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@layer components {
+  .gradient-primary {
+    background: var(--gradient-primary);
   }
-
-  body {
-    @apply bg-background text-foreground;
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+  
+  .hero-button {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8 py-3 rounded-lg shadow-soft transition-all duration-200 hover:shadow-strong;
+  }
+  
+  .capture-card {
+    @apply bg-card border border-border rounded-xl p-6 shadow-soft hover:shadow-strong transition-all duration-200;
+  }
+  
+  .feature-icon {
+    @apply w-12 h-12 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground;
   }
 }
